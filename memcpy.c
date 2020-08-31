@@ -64,6 +64,17 @@ int fmemcpy(void *dst, void *src, int len)
     return 0;
 }
 
+void fmemcpy2(void *restrict dst, const void *restrict src, size_t n)
+{
+  n /= 8;
+  asm (
+    "rep movsq"
+    : /* no output */
+    : "D" (dst), "S" (src), "c" (n)
+    : /* no clobbering */
+    );
+}
+
 int main(int argc, char **argv)
 {
     char src[4096] = {0};
@@ -78,8 +89,11 @@ int main(int argc, char **argv)
     uint64_t c4 = rdtsc();
     memcpy(dst, src, 4096);
     uint64_t c5 = rdtsc();
+    fmemcpy2(dst, src, 4096);
+    uint64_t c6 = rdtsc();
     printf("fmemset spend: %llu, fmemcpy spend: %llu\n", c2 - c1, c3 - c2);
     printf("memset spend: %llu, memcpy spend: %llu\n", c4 - c3, c5 - c4);
+    printf("fmemcpy2 spend: %llu\n", c6 - c5);
 
     return 0;
 }
